@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"unicode/utf8"
 )
 
 // Ensures gofmt doesn't remove the "bytes" import above (feel free to remove this!)
@@ -19,20 +18,9 @@ func main() {
 	}
 
 	pattern := os.Args[2]
+	line, _ := io.ReadAll(os.Stdin) // assume we're only dealing with a single line
 
-	line, err := io.ReadAll(os.Stdin) // assume we're only dealing with a single line
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: read input text: %v\n", err)
-		os.Exit(2)
-	}
-
-	ok, err := matchLine(line, pattern)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(2)
-	}
-
-	if !ok {
+	if ok, _ := matchLine(line, pattern); !ok {
 		os.Exit(1)
 	}
 
@@ -40,9 +28,6 @@ func main() {
 }
 
 func matchLine(line []byte, pattern string) (bool, error) {
-	if utf8.RuneCountInString(pattern) != 1 {
-		return false, fmt.Errorf("unsupported pattern: %q", pattern)
-	}
 
 	var ok bool
 
@@ -50,7 +35,7 @@ func matchLine(line []byte, pattern string) (bool, error) {
 	fmt.Println("Logs from your program will appear here!")
 
 	// Uncomment this to pass the first stage
-	// ok = bytes.ContainsAny(line, pattern)
+	ok = bytes.ContainsAny(line, pattern)
 
 	return ok, nil
 }
