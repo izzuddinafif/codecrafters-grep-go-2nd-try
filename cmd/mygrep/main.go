@@ -32,14 +32,20 @@ func matchLine(line []byte, pattern string) bool {
 	var found bool
 	for i := 0; i < len(pattern); i++ {
 		pt := rune(pattern[i])
+		fmt.Println(string(pt))
 		if pt == '\\' && i+1 < len(pattern) {
 			if pattern[i+1] == 'd' {
 				i++
-				found = matchFunc(line, unicode.IsDigit)
+				fmt.Println("here", i)
+				found = matchFunc(line, 0, unicode.IsDigit)
+			} else if pattern[i+1] == 'w' {
+				i++
+				found = matchFunc(line, 0, func(r rune) bool {
+					return unicode.IsDigit(r) || unicode.IsLetter(r) || r == '_'
+				})
 			}
 		}
-		if searchFunc(line, pt) {
-			matches = append(matches, pt)
+		if matchFunc(line, pt, nil) {
 			found = true
 		} else {
 			continue
@@ -50,24 +56,20 @@ func matchLine(line []byte, pattern string) bool {
 
 // type findMatch func(rune)
 
-func matchFunc(line []byte, f func(rune) bool) bool {
+func matchFunc(line []byte, pt rune, f func(rune) bool) bool {
 	var found bool
 	for _, b := range line {
 		li := rune(b)
-		if f(li) {
+		if f != nil && f(li) { // check if f is not nil and evaluates to true
 			matches = append(matches, li)
 			found = true
 			continue
 		}
+		if pt == li {
+			matches = append(matches, li)
+			found = true
+		}
 		continue
 	}
 	return found
-}
-
-func searchFunc(line []byte, pt rune) bool {
-	for _, b := range line {
-		li := rune(b)
-		return pt == li
-	}
-	return false
 }
