@@ -29,21 +29,39 @@ func main() {
 }
 
 func matchLine(line []byte, pattern string) bool {
-	var found bool
+	var found, squareBrackets bool
+	var in []rune
 	for i := 0; i < len(pattern); i++ {
 		pt := rune(pattern[i])
-		fmt.Println(string(pt))
 		if pt == '\\' && i+1 < len(pattern) {
 			if pattern[i+1] == 'd' {
 				i++
-				fmt.Println("here", i)
-				found = matchFunc(line, 0, unicode.IsDigit)
+				found = matchFunc(line, 0, func(r ...rune) bool {
+					return unicode.IsDigit(r[0])
+				})
 			} else if pattern[i+1] == 'w' {
 				i++
-				found = matchFunc(line, 0, func(r rune) bool {
-					return unicode.IsDigit(r) || unicode.IsLetter(r) || r == '_'
+				found = matchFunc(line, 0, func(r ...rune) bool {
+					return unicode.IsDigit(r[0]) || unicode.IsLetter(r[0]) || r[0] == '_'
 				})
 			}
+		}
+		if pt == '[' {
+			squareBrackets = true
+			continue
+		}
+		if squareBrackets {
+			if pt == ']' {
+				squareBrackets = false
+				continue
+			} else {
+				in = append(in, pt)
+			}
+		}
+		if in != nil && !squareBrackets {
+			matchFunc(line, 0, func(r ...rune) bool {
+				return bytes.ContainsAny(line, string(r))
+			})
 		}
 		if matchFunc(line, pt, nil) {
 			found = true
@@ -54,9 +72,7 @@ func matchLine(line []byte, pattern string) bool {
 	return found
 }
 
-// type findMatch func(rune)
-
-func matchFunc(line []byte, pt rune, f func(rune) bool) bool {
+func matchFunc(line []byte, pt rune, f func(...rune) bool) bool {
 	var found bool
 	for _, b := range line {
 		li := rune(b)
